@@ -17,25 +17,28 @@
 # <!-- pagebreak -->/ and this plugin will PULL ALL text up to the pagebreak.
 # MT TinyMCE plugin has a 'button' to instantly insert a pagebreak. 
 # see: http://plugins.movabletype.org/tinymce/
-# Last Modified: 3/21/2012
+# Last Modified: 3/22/2012 Rick Bychowski
 
 use strict;
 package MT::Plugin::HTMLExcerpt;
 use MT::Template::Context;
 
-# HTML Cleaner options: "Tidy" or "Lint". Default it "Tidy"
-my $cleaner = "Tidy"; #change to Lint if want Lint to clean HTML/orphaned tags
-
-if ($cleaner eq "Lint")
+# HTML Cleaner: Uses Tidy if available, otherwise uses Lint module  packaged  in extlib
+eval
 {
-use HTML::Lint;
+  require HTML::Tidy;
+  HTML::Tidy->import();
+};
+
+if($@) {
+  use HTML::Lint;
 } else {
-   use HTML::Tidy;
-  }
+  use HTML::Tidy;
+}
 
 use vars qw($VERSION);
 
-$VERSION = '1.1';
+$VERSION = '1.2';
 
 use MT;
 use MT::Plugin;
