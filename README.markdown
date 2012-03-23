@@ -1,6 +1,11 @@
 # HTMLEXCERPT 1.2 FOR MOVABLE TYPE #
 
+## AUTHOR: Tom Keating
 [Read Online Documentation](http://blog.tmcnet.com/blog/tom-keating/movabletype/htmlexcerpt-plugin-for-movable-type.asp)
+
+## Overview
+Allows fully formatted HTML excerpts by adding new global filter called html_sentences, allowing you to pull
+X number of sentences with full HTML formatting, e.g. tables, hyperlinks, bold, italics, etc.
 
 ## DEPENDENCIES ##
 Requires the HTML::Tidy or HTML::Lint module. As of version 1.2, the `HTML::Lint` module is bundled into extlib. The HTML::Tidy module will be used if installed, otherwise it falls back to the HTML::Lint module. The author recommends you install HTML::Tidy from cpan if possible.
@@ -14,6 +19,13 @@ Requires the HTML::Tidy or HTML::Lint module. As of version 1.2, the `HTML::Lint
 
 ## BUNDLED MODULES ##
 [HTML::Lint](http://search.cpan.org/dist/HTML-Lint/)
+
+# USAGE
+- You can use the global filter 'html_sentences' in any MT tag you like, but most likely you will use it within <$MTEntryBody>
+- Example use:
+  <$MTEntryBody html_sentences="4"$> <-Pulls 4 sentences with HTML formatting.
+- Optionally you can allow only certain HTML tags like so:
+  <$MTEntryBody html_sentences="4" sanitize="a href,p,br,i,em,strong,blockquote,ol,ul,li,script"$>
 
 Copyright 2005-2011 Andy Lester.
 
