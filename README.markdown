@@ -6,6 +6,7 @@
 ## Overview
 Allows fully formatted HTML excerpts by adding new global filter called html_sentences, allowing you to pull
 X number of sentences with full HTML formatting, e.g. tables, hyperlinks, bold, italics, etc.
+Any orphaned HTML tags will be corrected automatically.
 
 ## DEPENDENCIES ##
 Requires the HTML::Tidy or HTML::Lint module. As of version 1.2, the `HTML::Lint` module is bundled into extlib. The HTML::Tidy module will be used if installed, otherwise it falls back to the HTML::Lint module. The author recommends you install HTML::Tidy from cpan if possible.
