@@ -17,28 +17,25 @@
 # <!-- pagebreak -->/ and this plugin will PULL ALL text up to the pagebreak.
 # MT TinyMCE plugin has a 'button' to instantly insert a pagebreak. 
 # see: http://plugins.movabletype.org/tinymce/
-# Last Modified: 3/22/2012 Rick Bychowski
+# Last Modified: 3/21/2012
 
 use strict;
 package MT::Plugin::HTMLExcerpt;
 use MT::Template::Context;
 
-# HTML Cleaner: Uses Tidy if available, otherwise uses Lint module  packaged  in extlib
-eval
-{
-  require HTML::Tidy;
-  HTML::Tidy->import();
-};
+# HTML Cleaner options: "Tidy" or "Lint". Default it "Tidy"
+my $cleaner = "Tidy"; #change to Lint if want Lint to clean HTML/orphaned tags
 
-if($@) {
-  use HTML::Lint;
+if ($cleaner eq "Lint")
+{
+use HTML::Lint;
 } else {
-  use HTML::Tidy;
-}
+   use HTML::Tidy;
+  }
 
 use vars qw($VERSION);
 
-$VERSION = '1.2';
+$VERSION = '1.1';
 
 use MT;
 use MT::Plugin;
@@ -88,7 +85,7 @@ if ($usepagebreak == 0) {
 # Technical REGEX explanation:
 # Match punctuation (. ? !) followed by 0 or more spaces followed by &nbsp; OR <p> OR </span> followed by 1 space. e.g.:
 
-   @sentences = split(/([\.\?\!]\s*)(&nbsp;|<p>|<\/span>|\ )/,$text);
+   @sentences = split(/([\.\?\!]\s*)(&nbsp;|<p>|<\/p>|<\/span>|\ )/,$text);
 
 # Re-assign new max value since punctuation space more common than &nbsp;&nbsp;
    $max = @sentences > $sentences ? $sentences : @sentences;
