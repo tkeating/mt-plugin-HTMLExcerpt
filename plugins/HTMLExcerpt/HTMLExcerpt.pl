@@ -17,11 +17,22 @@
 # <!-- pagebreak -->/ and this plugin will PULL ALL text up to the pagebreak.
 # MT TinyMCE plugin has a 'button' to instantly insert a pagebreak. 
 # see: http://plugins.movabletype.org/tinymce/
-# Last Modified: 3/21/2012
+
+# Last Modified: 3/29/2012
+# Version 1.2
 
 use strict;
 package MT::Plugin::HTMLExcerpt;
 use MT::Template::Context;
+
+# Specify MINIMUM word count. If specified sentencesi i.e.:
+# <$MTEntryBody html_sentences="4"> <-- 4 sentences
+# doesn't reach the min. (in this case 4). the plugin will ADD 
+# 1 additional sentence. You could change this code and put it 
+# inside a function call and keep repeating until min word is reached
+# but that's overkill for my needs.
+
+my $minwordcount = 30; #Set to 0 for no minimum 
 
 # HTML Cleaner options: "Tidy" or "Lint". Default it "Tidy"
 my $cleaner = "Tidy"; #change to Lint if want Lint to clean HTML/orphaned tags
@@ -35,7 +46,7 @@ use HTML::Lint;
 
 use vars qw($VERSION);
 
-$VERSION = '1.1';
+$VERSION = '1.2';
 
 use MT;
 use MT::Plugin;
@@ -62,14 +73,14 @@ MT::Template::Context->add_global_filter('html_sentences' => \&x_html_sentences)
 
 sub x_html_sentences
 {
-  my ($text, $sentences, @sentences, $max, $usepagebreak) = @_;
+  my ($text, $sentences, @sentences, $max, $usepagebreak, $textORIG) = @_;
 $usepagebreak = 0;
 # Look for <!-- pagebreak --> and set sentences=1 if find it [1 large sentence block up to where pagebreak code is located.
-if ($text =~ m/<!-- pagebreak -->/)
-{
-  $sentences = 1;
-  $usepagebreak = 1;
-}
+  if ($text =~ m/<!-- pagebreak -->/)
+  {
+    $sentences = 1;
+    $usepagebreak = 1;
+  }
 
 if ($usepagebreak == 0) {
 # NO PAGE BREAK - Look for .&nbsp;&nbsp; and convert to .{space}&nbsp;
@@ -81,17 +92,46 @@ if ($usepagebreak == 0) {
    $max = @sentences > $sentences ? $sentences : @sentences;
    $text = join '. &nbsp;', @sentences[0..$max-1];
 
+# Look for Capital letter then 0-2 lower-case letters followed by PERIOD SPACE
+# Typically this is salutations, titles, or middle names.
+# Append Mr., Mrs., Prof., Gov., John F. Kennedy with some random text
+# after dropping the PERIOD SPACE. The PERIOD SPACE gets added back in later.
+# Note: |\ [A-Z]) looks for SPACE, one capital letter, then PERIOD SPACE
+#       , which matches middle names.
+   $text =~ s/([A-Z][a-z]{1,3}|\ [A-Z])(\.\s)/$1ZZZRandomTextZZZZ/g;
+
+# ALTERNATIVE: If want individual control of abbreviations simply 
+# UNCOMMENT REGEX in next line (and Comment Out REGEX above) and simply
+# add whatever abbreviatons to ignore / not match as being end of a sentence.
+# Note: Middle initial is special exception: \ [A-Z]
+# It looks for SPACE then Capital letter then period. Otherwise without
+# preceding SPACE it would match Capital letter then Period. Thus, would 
+# split this example incorrectly:
+# I worked at IBM. Now I don.t [would match M. ] in IBM.
+# $text =~ s/(Mr|Mrs|Ms|Dr|Prof|Gov|Sen|Rep|Rev|VP|Hon|Esq\ [A-Z])(\.\s)/$1ZZZRandomTextZZZZ/g;
+
 # Summary: Separates punctuation followed by space, &nbsp, </span>, or <p> 
 # Technical REGEX explanation:
 # Match punctuation (. ? !) followed by 0 or more spaces followed by &nbsp; OR <p> OR </span> followed by 1 space. e.g.:
-
    @sentences = split(/([\.\?\!]\s*)(&nbsp;|<p>|<\/p>|<\/span>|\ )/,$text);
 
 # Re-assign new max value since punctuation space more common than &nbsp;&nbsp;
    $max = @sentences > $sentences ? $sentences : @sentences;
 # Re-join the array elements to $text stopping at max limit -1 [elements start at 0]
    $text = join '', @sentences[0..$max-1];
+   $text =~ s/ZZZRandomTextZZZZ/\.\ /g; #3/28/12 Put back PERIOD SPACE
+   my $strText = $text ? stripHTML($text) : ''; #Get wordcount of Excerpt
+   my $wordcount = $strText =~ s/((^|\s)\S)/$1/ig;
  # $text .= "..." if (@sentences > $sentences); # Uncomment if want ... ellipsis at end
+#See if wordcount < minwordcount and if so, add 1 more sentence.
+   if ($wordcount < $minwordcount)
+     {
+        $max = $max + 3; #add 1 more sentence [word + Period + Space = 3 total]
+        $textORIG =~ s/([A-Z][a-z]{1,3}|\ [A-Z])(\.\s)/$1ZZZRandomTextZZZZ/g;
+        $textORIG = join '', @sentences[0..$max-1];
+        $textORIG =~ s/ZZZRandomTextZZZZ/\.\ /g; #Put back PERIOD SPACE
+        $text = $textORIG;
+     }
 } else {
     #PAGE BREAK Found. Grab entire HTML block of code up to pagebreak
     @sentences = split /<!-- pagebreak -->/, $text;
@@ -128,4 +168,11 @@ if ($cleaner eq "Lint")
  } #Close Else
 
  $text; #return $text
+} #Close x_html_sentences function
+
+sub stripHTML () {
+        $_ = shift;
+        s(<[^>]*>)( )g;
+        return $_;
 }
+
